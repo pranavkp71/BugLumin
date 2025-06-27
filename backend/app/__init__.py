@@ -6,8 +6,4 @@ def create_app():
     from .routes import main
     app.register_blueprint(main)
 
-    @app.route("/test")
-    def test():
-        return "test"
-
     return app

@@ -31,3 +31,18 @@ def create_snapshot():
         "message": "Snapshot created successfully.",
         "snapshot_id": snapshot.id
     }), 201
+
+@main.route('/snapshots/<snapshot_id>', methods=['GET'])
+def get_snapshot(snapshot_id):
+    snapshot = DebugSnapshot.query.get(snapshot_id)
+
+    if not snapshot:
+        return jsonify({"error": "Snapshot not found"}), 404
+    
+    return jsonify({
+        "id": snapshot.id,
+        "code": snapshot.code,
+        "logs": snapshot.logs,
+        'env_metadata': snapshot.env_metadata,
+        "created_at": snapshot.created_at.isoformat()
+    }), 200

@@ -7,7 +7,7 @@ main = Blueprint('main', __name__)
 def index():
     return jsonify({"message": "Buglumin backend running"})
 
-@main.route('/snapshots', methods=['POST'])
+@main.route('/snapshots/', methods=['POST'])
 def create_snapshot():
     data = request.get_json()
 

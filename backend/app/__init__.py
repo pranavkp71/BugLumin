@@ -3,7 +3,7 @@ from .models import db
 from .routes import main
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, instance_relative_config=True)
 
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///buglumin.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False

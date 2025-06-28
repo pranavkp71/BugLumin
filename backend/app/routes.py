@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from .models import db, DebugSnapshot
+import uuid
 
 main = Blueprint('main', __name__)
 
@@ -34,15 +35,15 @@ def create_snapshot():
 
 @main.route('/snapshots/<snapshot_id>', methods=['GET'])
 def get_snapshot(snapshot_id):
-    snapshot = DebugSnapshot.query.get(snapshot_id)
+    snapshot = DebugSnapshot.query.filter_by(id=snapshot_id).first()
 
     if not snapshot:
         return jsonify({"error": "Snapshot not found"}), 404
-    
+
     return jsonify({
         "id": snapshot.id,
         "code": snapshot.code,
         "logs": snapshot.logs,
-        'env_metadata': snapshot.env_metadata,
+        "env_metadata": snapshot.env_metadata,
         "created_at": snapshot.created_at.isoformat()
     }), 200

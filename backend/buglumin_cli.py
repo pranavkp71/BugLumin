@@ -55,20 +55,58 @@ def view_snapshot(snapshot_id):
     except requests.exceptions.ConnectionError:
         print("❌ Could not connect to the Buglumin API.  Is the server running?")
 
+def list_snapshots():
+    try:
+        resp = requests.get(API_URL)
+        if resp.status_code == 200:
+            snapshots = resp.json().get("snapshots", [])
+            if not snapshots:
+                print("No snapshots fount.")
+                return
+            
+            print("\n Recent Snapshots:")
+            for snap in snapshots:
+                print(f"{snap['id']}")
+                print(f" {snap['created_at']}")
+                print(f" Code: {snap['code'][:50]}...\n")
+        else:
+            print(f"❌ Error: {resp.status_code} - {resp.text}")
+    except requests.exceptions.ConnectionError:
+        print("❌ Could not connect to the Buglumin API.  Is the server running?")
+
+def delete_snapshot(snapshot_id):
+    try:
+        resp = requests.delete(f"{API_URL}{snapshot_id}")
+        if resp.status_code == 200:
+            print(f"Snapshot {snapshot_id} deleted successfully.")
+        elif resp.status_code == 404:
+            print("Snapshot not found.")
+        else:
+            print(f"❌ Error: {resp.status_code} - {resp.text}")
+    except requests.exceptions.ConnectionError:
+        print("❌ Could not connect to the Buglumin API.  Is the server running?")
+
 def main():
     parser = argparse.ArgumentParser(description="Buglumin CLI - Push debug snapshots")
 
     subparsers = parser.add_subparsers(dest="command")
 
-    #push command
+    # push command
     push_parser = subparsers.add_parser("push", help="Push a debug snapshot")
     push_parser.add_argument("--code", required=True, help="Path to code file")
     push_parser.add_argument("--log", help="Path to log file (optional)")
     push_parser.add_argument("--meta", nargs="*", default=[], help="Metadata in key=value format")
 
-    #view_command
+    # view_command
     view_parser = subparsers.add_parser("view", help="View a snapshot by ID")
     view_parser.add_argument("--id", required=True, help="Snapshot ID to view")
+
+    # list command
+    list_parser = subparsers.add_parser("ls", help="List all snapshots")
+
+    # delete_command
+    delete_parser = subparsers.add_parser("rm", help="Delete snapshot by ID")
+    delete_parser.add_argument("--id", required=True, help="Snapshot ID to delete")
 
     args = parser.parse_args()
 
@@ -76,6 +114,10 @@ def main():
         push_snapshot(args.code, args.log, args.meta)
     elif args.command == "view":
         view_snapshot(args.id)
+    elif args.command == "ls":
+        list_snapshots()
+    elif args.command == "rm":
+        delete_snapshot(args.id)
     else:
         parser.print_help()
 

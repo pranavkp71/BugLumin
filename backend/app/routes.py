@@ -47,3 +47,26 @@ def get_snapshot(snapshot_id):
         "env_metadata": snapshot.env_metadata,
         "created_at": snapshot.created_at.isoformat()
     }), 200
+
+@main.route('/snapshots/', methods=['GET'])
+def lis_snapshots():
+    snapshots = DebugSnapshot.query.order_by(DebugSnapshot.created_at.desc()).limit(10).all()
+    return jsonify({
+        'snapshots': [
+            {
+                "id": s.id,
+                "code": s.code,
+                "created_at": s.created_at.isoformat()
+            } for s in snapshots
+        ]
+    }), 200
+
+@main.route('/snapshots/<snapshot_id>', methods=['DELETE'])
+def delete_snapshot(snapshot_id):
+    snapshot = DebugSnapshot.query.filter_by(id=snapshot_id).first()
+    if not snapshot:
+        return jsonify({"error": "Snapshot not found"}), 404
+    
+    db.session.delete(snapshot)
+    db.session.commit()
+    return jsonify({"message": "Snapshot deleted"}), 200

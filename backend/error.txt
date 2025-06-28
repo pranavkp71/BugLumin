@@ -1,1 +1,1 @@
-"Traceback: simulated error" 
+"Traceback: syntax_error" 

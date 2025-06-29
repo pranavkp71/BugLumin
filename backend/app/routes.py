@@ -115,7 +115,7 @@ def view_shared_snapshot(share_id):
     snapshot = DebugSnapshot.query.filter_by(share_id=share_id, is_shared=True).first()
 
     if not snapshot:
-        return jsonify({"error": "Shared snapshot not found"}), 400
+        abort(404, description="Shared snapshot not found")
     
     return jsonify({
         "id": snapshot.id,

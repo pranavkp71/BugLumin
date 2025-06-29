@@ -119,11 +119,11 @@ def main():
     view_parser.add_argument("--id", required=True, help="Snapshot ID to view")
 
     # list command
-    list_parser = subparsers.add_parser("list", help="List snapshots with optional filters")
+    list_parser = subparsers.add_parser("ls", help="List snapshots with optional filters")
     list_parser.add_argument("--filter", nargs="*", default=[], help="Filter by key=value format(e.g., os=windows)")
 
     # delete_command
-    delete_parser = subparsers.add_parser("delete", help="Delete snapshot by ID")
+    delete_parser = subparsers.add_parser("rm", help="Delete snapshot by ID")
     delete_parser.add_argument("--id", required=True, help="Snapshot ID to delete")
 
     # share command

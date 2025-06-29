@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from .models import db, DebugSnapshot
-import uuid
+from sqlalchemy import cast, String, or_
+import json
 
 main = Blueprint('main', __name__)
 
@@ -57,23 +58,29 @@ def list_snapshots():
     error_filter = request.args.get('error')
 
     if os_filter:
-        query = query.filter(DebugSnapshot.env_metadata['os'].astext == os_filter)
+        query = query.filter(
+            cast(DebugSnapshot.env_metadata, String).ilike(f'%\"os\": \"{os_filter}\"%')
+        )
     if python_filter:
-        query = query.filter(DebugSnapshot.env_metadata['Python'].astext == python_filter)
+        query = query.filter(
+            cast(DebugSnapshot.env_metadata, String).ilike(f'%\"python\": \"{python_filter}\"%') |
+            cast(DebugSnapshot.env_metadata, String).ilike(f'%\"python_version\": \"{python_filter}\"%')
+        )
     if error_filter:
-        query = query.filter(DebugSnapshot.logs(f"%{error_filter}%"))
+        query = query.filter(cast(DebugSnapshot.logs, String).ilike(f"%{error_filter}%"))
 
     results = query.all()
-    return jsonify([
+    return jsonify({
+        'snapshots' : [
             {
                 "id": s.id,
                 "code": s.code,
                 "logs": s.logs,
                 "env_metadata": s.env_metadata,
                 "created_at": s.created_at.isoformat()
-            } 
-            for s in results
-        ])
+            } for s in results
+        ]
+    }), 200
 
 @main.route('/snapshots/<snapshot_id>', methods=['DELETE'])
 def delete_snapshot(snapshot_id):

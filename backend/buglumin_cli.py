@@ -10,7 +10,7 @@ def parse_meta(meta_list):
     for item in meta_list:
         if '=' in item:
             key, value = item.split('=', 1)
-            meta[key.strip()] = value.strip()
+            meta[key.strip().lower()] = value.strip()
     return meta
 
 def push_snapshot(code_file, log_file, meta_list):
@@ -55,20 +55,27 @@ def view_snapshot(snapshot_id):
     except requests.exceptions.ConnectionError:
         print("❌ Could not connect to the Buglumin API.  Is the server running?")
 
-def list_snapshots():
+def list_snapshots(filter_list):
+    params = {}
+    for f in filter_list:
+        if '=' in f:
+            k, v = f.split('=', 1)
+            params[k] = v
+        if not filter_list:
+            print("No filters applied. Showing recent snapshots.")
+
     try:
-        resp = requests.get(API_URL)
+        resp = requests.get(API_URL, params=params)
         if resp.status_code == 200:
             snapshots = resp.json().get("snapshots", [])
             if not snapshots:
                 print("No snapshots fount.")
                 return
-            
-            print("\n Recent Snapshots:")
             for snap in snapshots:
-                print(f"{snap['id']}")
-                print(f" {snap['created_at']}")
-                print(f" Code: {snap['code'][:50]}...\n")
+                print(f"ID: {snap['id']}")
+                print(f"Created: {snap['created_at']}")
+                print(f"Metadata: {json.dumps(snap.get('env_metadata', {}))}")
+                print("-" * 40)
         else:
             print(f"❌ Error: {resp.status_code} - {resp.text}")
     except requests.exceptions.ConnectionError:
@@ -102,7 +109,8 @@ def main():
     view_parser.add_argument("--id", required=True, help="Snapshot ID to view")
 
     # list command
-    list_parser = subparsers.add_parser("ls", help="List all snapshots")
+    list_parser = subparsers.add_parser("ls", help="List snapshots with optional filters")
+    list_parser.add_argument("--filter", nargs="*", default=[], help="Filter by key=value format(e.g., os=windows)")
 
     # delete_command
     delete_parser = subparsers.add_parser("rm", help="Delete snapshot by ID")
@@ -115,7 +123,7 @@ def main():
     elif args.command == "view":
         view_snapshot(args.id)
     elif args.command == "ls":
-        list_snapshots()
+        list_snapshots(args.filter)
     elif args.command == "rm":
         delete_snapshot(args.id)
     else:

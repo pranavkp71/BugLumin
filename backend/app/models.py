@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Boolean
+from sqlalchemy import Boolean, Index
 from datetime import datetime
 import uuid
 
@@ -7,6 +7,9 @@ db = SQLAlchemy()
 
 class DebugSnapshot(db.Model):
     __tablename__ = 'debug_snapshots'
+    __tablen_args__ = (
+        Index('idx_created_at', 'created_at'),
+    )
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     code = db.Column(db.Text, nullable=False)

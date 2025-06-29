@@ -1,4 +1,4 @@
-![CI](https://github.com/pranavkp71/adsync-mini/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/pranavkp71/Buglumin/actions/workflows/ci.yml/badge.svg)
 
 # Buglumin Backend
 

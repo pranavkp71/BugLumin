@@ -122,5 +122,5 @@ def view_shared_snapshot(share_id):
         "code": snapshot.code,
         "logs": snapshot.logs,
         "env_metadata": snapshot.env_metadata,
-        "created_at": snapshot.created_at.isformat()
+        "created_at": snapshot.created_at.isoformat()
     }), 200

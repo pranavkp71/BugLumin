@@ -38,7 +38,7 @@ def push_snapshot(code_file, log_file, meta_list):
         else:
             print(f"❌ Error: {resp.status_code} {resp.text}")
     except requests.exceptions.ConnectionError:
-        print("❌ Could not connect to the Buglumin API. Is the server running?")
+        print("❌ Could not connect to the Buglumin API")
 
 def view_snapshot(snapshot_id):
     try:
@@ -53,7 +53,7 @@ def view_snapshot(snapshot_id):
         else:
             print(f"❌ Error: {resp.status_code} - {resp.text}")
     except requests.exceptions.ConnectionError:
-        print("❌ Could not connect to the Buglumin API.  Is the server running?")
+        print("❌ Could not connect to the Buglumin API")
 
 def list_snapshots(filter_list):
     params = {}
@@ -79,7 +79,7 @@ def list_snapshots(filter_list):
         else:
             print(f"❌ Error: {resp.status_code} - {resp.text}")
     except requests.exceptions.ConnectionError:
-        print("❌ Could not connect to the Buglumin API.  Is the server running?")
+        print("❌ Could not connect to the Buglumin API")
 
 def delete_snapshot(snapshot_id):
     try:
@@ -91,7 +91,17 @@ def delete_snapshot(snapshot_id):
         else:
             print(f"❌ Error: {resp.status_code} - {resp.text}")
     except requests.exceptions.ConnectionError:
-        print("❌ Could not connect to the Buglumin API.  Is the server running?")
+        print("❌ Could not connect to the Buglumin API")
+
+def share_snapshot_cli(snapshot_id):
+    try:
+        resp = requests.post(f"{API_URL.replace('/snapshots/', '')}/share/{snapshot_id}")
+        if resp.status_code == 200:
+            print(f"✅ Snapshot shared at: {resp.json()['share_url']}")
+        else:
+            print(f"❌ Error: {resp.status_code} - {resp.text}")
+    except requests.exceptions.ConnectionError:
+        print(f"❌ Could not connect to the BUglumin API")
 
 def main():
     parser = argparse.ArgumentParser(description="Buglumin CLI - Push debug snapshots")
@@ -109,12 +119,16 @@ def main():
     view_parser.add_argument("--id", required=True, help="Snapshot ID to view")
 
     # list command
-    list_parser = subparsers.add_parser("ls", help="List snapshots with optional filters")
+    list_parser = subparsers.add_parser("list", help="List snapshots with optional filters")
     list_parser.add_argument("--filter", nargs="*", default=[], help="Filter by key=value format(e.g., os=windows)")
 
     # delete_command
-    delete_parser = subparsers.add_parser("rm", help="Delete snapshot by ID")
+    delete_parser = subparsers.add_parser("delete", help="Delete snapshot by ID")
     delete_parser.add_argument("--id", required=True, help="Snapshot ID to delete")
+
+    # share command
+    share_parser = subparsers.add_parser("share", help="Share a snapshot publicly")
+    share_parser.add_argument("--id", required=True, help="Snapshot ID to share")
 
     args = parser.parse_args()
 
@@ -126,6 +140,8 @@ def main():
         list_snapshots(args.filter)
     elif args.command == "rm":
         delete_snapshot(args.id)
+    elif args.command == "share":
+        share_snapshot_cli(args.id)
     else:
         parser.print_help()
 

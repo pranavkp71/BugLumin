@@ -12,3 +12,5 @@ class DebugSnapshot(db.Model):
     logs = db.Column(db.Text)
     env_metadata = db.Column(db.JSON)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    shared_id = db.Column(db.String(36), unique=True, nullable=True)
+    is_shared = db.Column(db.Boolean, default=False)

@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from .models import db, DebugSnapshot
 from sqlalchemy import cast, String, or_
 import json
+import uuid
 
 main = Blueprint('main', __name__)
 
@@ -91,3 +92,35 @@ def delete_snapshot(snapshot_id):
     db.session.delete(snapshot)
     db.session.commit()
     return jsonify({"message": "Snapshot deleted"}), 200
+
+@main.route('/share/<snapshot_id>', methods=['POST'])
+def share_snapshot(snapshot_id):
+    snapshot = DebugSnapshot.query.filter_by(id=snapshot_id).first()
+
+    if not snapshot:
+        return jsonify({"error": "Snapshot not found"}), 404
+    
+    if not snapshot.is_shared:
+        snapshot.is_shared = True
+        snapshot.share_id = str(uuid.uuid4())
+        db.session.commit()
+
+    return jsonify({
+        "message": "Snapshot shared successfully",
+        "share_url": f"http://127.0.0.1:5000/public/{snapshot.share_id}"
+    }), 200
+
+@main.route('/public/<share_id>', methods=['GET'])
+def view_shared_snapshot(share_id):
+    snapshot = DebugSnapshot.query.filter_by(share_id=share_id, is_shared=True).first()
+
+    if not snapshot:
+        return jsonify({"error": "Shared snapshot not found"}), 400
+    
+    return jsonify({
+        "id": snapshot.id,
+        "code": snapshot.code,
+        "logs": snapshot.logs,
+        "env_metadata": snapshot.env_metadata,
+        "created_at": snapshot.created_at.isformat()
+    }), 200

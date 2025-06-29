@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, abort
 from .models import db, DebugSnapshot
 from sqlalchemy import cast, String, or_
 import json
@@ -40,7 +40,7 @@ def get_snapshot(snapshot_id):
     snapshot = DebugSnapshot.query.filter_by(id=snapshot_id).first()
 
     if not snapshot:
-        return jsonify({"error": "Snapshot not found"}), 404
+        abort(404, description="Snapshot not found")
 
     return jsonify({
         "id": snapshot.id,

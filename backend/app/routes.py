@@ -49,17 +49,31 @@ def get_snapshot(snapshot_id):
     }), 200
 
 @main.route('/snapshots/', methods=['GET'])
-def lis_snapshots():
-    snapshots = DebugSnapshot.query.order_by(DebugSnapshot.created_at.desc()).limit(10).all()
-    return jsonify({
-        'snapshots': [
+def list_snapshots():
+    query = DebugSnapshot.query
+
+    os_filter = request.args.get('os')
+    python_filter = request.args.get('python')
+    error_filter = request.args.get('error')
+
+    if os_filter:
+        query = query.filter(DebugSnapshot.env_metadata['os'].astext == os_filter)
+    if python_filter:
+        query = query.filter(DebugSnapshot.env_metadata['Python'].astext == python_filter)
+    if error_filter:
+        query = query.filter(DebugSnapshot.logs(f"%{error_filter}%"))
+
+    results = query.all()
+    return jsonify([
             {
                 "id": s.id,
                 "code": s.code,
+                "logs": s.logs,
+                "env_metadata": s.env_metadata,
                 "created_at": s.created_at.isoformat()
-            } for s in snapshots
-        ]
-    }), 200
+            } 
+            for s in results
+        ])
 
 @main.route('/snapshots/<snapshot_id>', methods=['DELETE'])
 def delete_snapshot(snapshot_id):

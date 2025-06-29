@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Boolean
 from datetime import datetime
 import uuid
 
@@ -14,4 +15,5 @@ class DebugSnapshot(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_shared = db.Column(db.Boolean, default=False)
     share_id = db.Column(db.String(36), unique=True, nullable=True)
+    is_public = db.Column(Boolean, default=False)
 

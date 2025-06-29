@@ -16,7 +16,10 @@ def parse_meta(meta_list):
 def push_snapshot(code_file, log_file, meta_list):
     if not os.path.exists(code_file):
         print(f"❌ Code file '{code_file}' not found.")
+        return
     
+    if os.path.getsize(code_file) == 0:
+        print("❌ Code file is empty.")
     code = open(code_file).read()
 
     logs = ""

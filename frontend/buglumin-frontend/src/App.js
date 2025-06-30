@@ -1,3 +1,16 @@
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
+import Home from "./pages/Home";
+import ViewSnapshot from "./pages/ViewSnapshot";
+import SharePublic from "./pages/SharePublic";
+
 export default function App() {
-  return <h1 className="text-3xl font-bold text-center mt-10">Buglumin UI</h1>
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/snapshot/:id" element={<ViewSnapshot/>} />
+        <Route path="/public/:shareID" element={<SharePublic />} />
+      </Routes>
+    </Router>
+  );
 }

@@ -2,7 +2,9 @@ from flask import Blueprint, jsonify, request, abort
 from .models import db, DebugSnapshot, User
 from sqlalchemy import cast, String
 import uuid
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import (
+    create_access_token, jwt_required, get_jwt_identity
+)
 
 main = Blueprint('main', __name__)
 
@@ -11,22 +13,18 @@ def index():
     return jsonify({"message": "Buglumin backend running"})
 
 @main.route('/snapshots/', methods=['POST'])
+@jwt_required()
 def create_snapshot():
+    user_id = get_jwt_identity()
     data = request.get_json()
-
     code = data.get('code')
     logs = data.get('logs')
     env_metadata = data.get('metadata')
 
     if not code:
         return jsonify({"error": "Code field is required."}), 400
-    
-    snapshot = DebugSnapshot(
-        code = code,
-        logs = logs,
-        env_metadata = env_metadata
-    )
 
+    snapshot = DebugSnapshot(code=code, logs=logs, env_metadata=env_metadata)
     db.session.add(snapshot)
     db.session.commit()
 
@@ -36,12 +34,11 @@ def create_snapshot():
     }), 201
 
 @main.route('/snapshots/<snapshot_id>', methods=['GET'])
+@jwt_required()
 def get_snapshot(snapshot_id):
     snapshot = DebugSnapshot.query.filter_by(id=snapshot_id).first()
-
     if not snapshot:
         abort(404, description="Snapshot not found")
-
     return jsonify({
         "id": snapshot.id,
         "code": snapshot.code,
@@ -51,9 +48,9 @@ def get_snapshot(snapshot_id):
     }), 200
 
 @main.route('/snapshots/', methods=['GET'])
+@jwt_required()
 def list_snapshots():
     query = DebugSnapshot.query
-
     os_filter = request.args.get('os')
     python_filter = request.args.get('python')
     error_filter = request.args.get('error')
@@ -72,34 +69,32 @@ def list_snapshots():
 
     results = query.all()
     return jsonify({
-        'snapshots' : [
-            {
-                "id": s.id,
-                "code": s.code,
-                "logs": s.logs,
-                "env_metadata": s.env_metadata,
-                "created_at": s.created_at.isoformat()
-            } for s in results
-        ]
+        'snapshots': [{
+            "id": s.id,
+            "code": s.code,
+            "logs": s.logs,
+            "env_metadata": s.env_metadata,
+            "created_at": s.created_at.isoformat()
+        } for s in results]
     }), 200
 
 @main.route('/snapshots/<snapshot_id>', methods=['DELETE'])
+@jwt_required()
 def delete_snapshot(snapshot_id):
     snapshot = DebugSnapshot.query.filter_by(id=snapshot_id).first()
     if not snapshot:
         return jsonify({"error": "Snapshot not found"}), 404
-    
     db.session.delete(snapshot)
     db.session.commit()
     return jsonify({"message": "Snapshot deleted"}), 200
 
 @main.route('/share/<snapshot_id>', methods=['POST'])
+@jwt_required()
 def share_snapshot(snapshot_id):
     snapshot = DebugSnapshot.query.filter_by(id=snapshot_id).first()
-
     if not snapshot:
         return jsonify({"error": "Snapshot not found"}), 404
-    
+
     if not snapshot.is_shared:
         snapshot.is_shared = True
         snapshot.share_id = str(uuid.uuid4())
@@ -113,10 +108,8 @@ def share_snapshot(snapshot_id):
 @main.route('/public/<share_id>', methods=['GET'])
 def view_shared_snapshot(share_id):
     snapshot = DebugSnapshot.query.filter_by(share_id=share_id, is_shared=True).first()
-
     if not snapshot:
         abort(404, description="Shared snapshot not found")
-    
     return jsonify({
         "id": snapshot.id,
         "code": snapshot.code,
@@ -137,16 +130,14 @@ def register():
 
     if not username or not password:
         return jsonify({"msg": "Username and password required"}), 400
-    
     if User.query.filter_by(username=username).first():
         return jsonify({"msg": "Username already exists"}), 409
-    
-    new_user = User(
-        username = username,
-        first_name = first_name,
-        last_name = last_name, 
-        email = email
 
+    new_user = User(
+        username=username,
+        first_name=first_name,
+        last_name=last_name,
+        email=email
     )
     new_user.set_password(password)
     db.session.add(new_user)
@@ -159,7 +150,6 @@ def register():
     }), 201
 
 # Login
-
 @main.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -168,13 +158,13 @@ def login():
 
     if not username or not password:
         return jsonify({"msg": "Username and password required"}), 400
-    
+
     user = User.query.filter_by(username=username).first()
     if not user or not user.check_password(password):
         return jsonify({"msg": "Invalid credentials"}), 401
-    
-    access_toke = create_access_token(identity=user.id)
+
+    access_token = create_access_token(identity=user.id)
     return jsonify({
         "msg": "Login successful",
-        "access_toke": access_toke
+        "access_token": access_token
     }), 200

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 export default function SharePublic() {
     const { shareId } = useParams();
-    const { snap, setSnap } = useState(null);
+    const [ snap, setSnap ] = useState(null);
 
     useEffect(() => {
         fetch(`http://127.0.0.1:5000/public/${shareId}`)

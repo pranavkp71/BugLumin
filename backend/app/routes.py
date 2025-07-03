@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request, abort
-from .models import db, DebugSnapshot
-from sqlalchemy import cast, String, or_
-import json
+from .models import db, DebugSnapshot, User
+from sqlalchemy import cast, String
 import uuid
+from flask_jwt_extended import create_access_token
 
 main = Blueprint('main', __name__)
 
@@ -123,4 +123,58 @@ def view_shared_snapshot(share_id):
         "logs": snapshot.logs,
         "env_metadata": snapshot.env_metadata,
         "created_at": snapshot.created_at.isoformat()
+    }), 200
+
+# Register
+@main.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    first_name = data.get('first_name')
+    last_name = data.get('last_name')
+    email = data.get('email')
+
+    if not username or not password:
+        return jsonify({"msg": "Username and password required"}), 400
+    
+    if User.query.filter_by(username=username).first():
+        return jsonify({"msg": "Username already exists"}), 409
+    
+    new_user = User(
+        username = username,
+        first_name = first_name,
+        last_name = last_name, 
+        email = email
+
+    )
+    new_user.set_password(password)
+    db.session.add(new_user)
+    db.session.commit()
+
+    access_token = create_access_token(identity=new_user.id)
+    return jsonify({
+        "msg": "User registered successfully",
+        "access_token": access_token
+    }), 201
+
+# Login
+
+@main.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
+        return jsonify({"msg": "Username and password required"}), 400
+    
+    user = User.query.filter_by(username=username).first()
+    if not user or not user.check_password(password):
+        return jsonify({"msg": "Invalid credentials"}), 401
+    
+    access_toke = create_access_token(identity=user.id)
+    return jsonify({
+        "msg": "Login successful",
+        "access_toke": access_toke
     }), 200
